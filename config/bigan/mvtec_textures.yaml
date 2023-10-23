@@ -1,0 +1,75 @@
+seed: 42
+epochs: 100
+batch_size: 32
+val_split: 0.2
+count: 100
+preprocessor:
+  resizing:
+    height: 256
+    width: 256
+  rescaling:
+    scale: 0.007843137254902
+    offset: -1
+  patches:
+    num_patches: 10
+    patch_size: [32, 32]
+augmenter:
+  flip:
+    mode: horizontal_and_vertical
+model:
+  name: bigan
+  generator:
+    optimizer_name: adam
+    optimizer_args:
+      learning_rate: 0.0002
+      beta_1: 0.2
+      beta_2: 0.9
+    input_shape: [128]
+    block_filters: [256, 128, 64]
+    output_shape: [32, 32, 3]
+  encoder:
+    optimizer_name: adam
+    optimizer_args:
+      learning_rate: 0.0002
+      beta_1: 0.2
+      beta_2: 0.9
+    input_shape: [32, 32, 3]
+    block_filters: [64, 128, 256]
+    output_shape: [128]
+  discriminator:
+    optimizer_name: adam
+    optimizer_args:
+      learning_rate: 0.0002
+      beta_1: 0.2
+      beta_2: 0.9
+    input_shape: [[32, 32, 3], [128]]
+    block_filters: [128, 256, 512]
+    output_shape: [1]
+detector:
+  name: bigan
+  preprocessor:
+    rescaling:
+      scale: 0.007843137254902
+      offset: -1
+    resizing:
+      height: 256
+      width: 256
+    resizepadcrop:
+      target_height: 256
+      target_width: 256
+  postprocessor:
+    resizepadcrop:
+      target_height: 700
+      target_width: 256
+  generator:
+    input_shape: [null, null, 128]
+    block_filters: [256, 128, 64]
+    output_shape: [null, null, 3]
+  encoder:
+    input_shape: [null, null, 3]
+    block_filters: [64, 128, 256]
+    output_shape: [null, null, 128]
+  discriminator:
+    input_shape: [[null, null, 3], [null, null, 128]]
+    block_filters: [128, 256, 512]
+    output_shape: [null, null, 1]

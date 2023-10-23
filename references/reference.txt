@@ -1,0 +1,6 @@
+https://drivendata.github.io/cookiecutter-data-science/ (Project template reference)
+https://github.com/openvinotoolkit/anomalib (Anomalib)
+https://arxiv.org/abs/1802.06222 (Efficient GAN based anomaly detection)
+https://www.sciencedirect.com/science/article/abs/pii/S1361841518302640 (Fast AnoGAN)
+https://arxiv.org/abs/1805.06725 (Ganomaly)
+https://arxiv.org/abs/1901.08954 (Skip-Ganomaly)
