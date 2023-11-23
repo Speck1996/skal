@@ -1,6 +1,6 @@
 seed: 42
 epochs: 100
-batch_size: 64
+batch_size: 32
 val_split: 0.2
 count: 2000
 preprocessor:
@@ -8,7 +8,7 @@ preprocessor:
     scale: 0.007843137254902
     offset: -1
   patches:
-    patch_size: [32, 32]
+    patch_size: [64, 64]
 augmenter:
   flip:
     mode: horizontal_and_vertical
@@ -17,33 +17,30 @@ model:
   generator:
     optimizer_name: adam
     optimizer_args:
-      learning_rate: 0.0002
+      learning_rate: 0.0001
       beta_1: 0.2
-      beta_2: 0.99
     input_shape: [128]
-    block_filters: [256 , 128, 64]
-    output_shape: [32, 32, 1]
-    base_kernel_size: 4
+    block_filters: [256, 128, 64]
+    output_shape: [64, 64, 1]
+    base_kernel_size: 8
   encoder:
     optimizer_name: adam
     optimizer_args:
-      learning_rate: 0.0002
+      learning_rate: 0.0001
       beta_1: 0.2
-      beta_2: 0.99
-    input_shape: [32, 32, 1]
+    input_shape: [64, 64, 1]
     block_filters: [64, 128, 256]
     output_shape: [128]
-    base_kernel_size: 4
+    base_kernel_size: 8
   discriminator:
     optimizer_name: adam
     optimizer_args:
-      learning_rate: 0.0002
+      learning_rate: 0.0001
       beta_1: 0.2
-      beta_2: 0.99
-    input_shape: [[32, 32, 1], [128]]
+    input_shape: [[64, 64, 1], [128]]
     block_filters: [64, 128, 256]
     output_shape: [1]
-    base_kernel_size: 4
+    base_kernel_size: 8
 detector:
   name: bigan
   preprocessor:
@@ -61,15 +58,15 @@ detector:
     input_shape: [null, null, 128]
     block_filters: [256, 128, 64]
     output_shape: [null, null, 1]
-    base_kernel_size: 4
+    base_kernel_size: 8
   encoder:
     input_shape: [null, null, 1]
     block_filters: [64, 128, 256]
     output_shape: [null, null, 128]
-    base_kernel_size: 4
+    base_kernel_size: 8
   discriminator:
     input_shape: [[null, null, 1], [null, null, 128]]
     block_filters: [64, 128, 256]
     output_shape: [null, null, 1]
-    base_kernel_size: 4
+    base_kernel_size: 8
 

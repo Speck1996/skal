@@ -19,6 +19,19 @@ from skal.utils.utils import set_gpu
 @click.option('--config-path', type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option('--experiment-dir', type=click.Path(exists=False, file_okay=False, dir_okay=True))
 def run_training(training_dir, dataset_format, model, config_path, experiment_dir):
+    """
+    Trains a deep learning generative anomaly detection model on a given dataset.
+
+    Args:
+        training_dir (str): The directory path of the training data.
+        dataset_format (str): The format of the dataset (e.g., 'mvtec', 'folder').
+        model (str): The type of model to be trained (e.g., 'bigan', 'fanogan').
+        config_path (str): The path to the configuration file.
+        experiment_dir (str): The directory to save the experiment results.
+
+    Returns:
+        None. The function performs the training and saves the model weights, but does not return any output.
+    """
     set_gpu()
     click.echo(f"{training_dir} with {model}.")
     exp_params = utils.load_yaml_file(config_path)

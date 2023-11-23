@@ -55,6 +55,7 @@ class AnomalyDatasetBuilder(DatasetBuilder):
             train_ds = train_ds.map(self.preprocessor, tf.data.AUTOTUNE)
         
         train_ds = train_ds.cache()
+        list(train_ds.as_numpy_iterator())
         
         if shuffle:
             train_ds = train_ds.shuffle(batch_size * 10, seed=self.seed)
@@ -72,14 +73,22 @@ class AnomalyDatasetBuilder(DatasetBuilder):
         # join train and val_ds creation methods
         val_ds = tf.data.Dataset.from_tensor_slices(val_paths)
         val_ds = val_ds.map(decode_image, tf.data.AUTOTUNE)
-        val_ds = val_ds.repeat(2500)
+
+        if ds_count > 1:
+            val_ds = val_ds.repeat(ds_count)
+
         if self.preprocessor:
             val_ds = val_ds.map(self.preprocessor, tf.data.AUTOTUNE)
+
         val_ds = val_ds.cache()
+
+        list(val_ds.as_numpy_iterator())
+
         if len(val_ds.element_spec.shape) == 3:
             val_ds = val_ds.batch(batch_size)
         else:
             val_ds = val_ds.rebatch(batch_size)
+
         val_ds = val_ds.prefetch(tf.data.AUTOTUNE)
 
         return train_ds, val_ds
@@ -98,6 +107,9 @@ class AnomalyDatasetBuilder(DatasetBuilder):
             )
 
         test_ds = test_ds.cache()
+        
+        list(test_ds.as_numpy_iterator())
+        
         test_ds = test_ds.batch(batch_size)
         test_ds = test_ds.prefetch(tf.data.AUTOTUNE)
 

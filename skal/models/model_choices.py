@@ -1,22 +1,31 @@
-import tensorflow as tf
-from enum import Enum, auto
+from enum import Enum
 
-from skal.models.base import loader
+from skal.models.base.loader import ModelLoader
 from skal.models.bigan.loader import BiganLoader
+from skal.models.ganomaly.loader import GanomalyLoader
+from skal.models.fanogan.loader import FanoganLoader
+from skal.exceptions.model import MissingModel
+
 
 class AvailableModels(Enum):
     BIGAN = "bigan"
+    GANOMALY = "ganomaly"
+    FANOGAN = "fanogan"
 
 
 class LoaderFactory:
     @staticmethod
-    def get_loader(model_name) -> loader.ModelLoader:
+    def get_loader(model_type) -> ModelLoader:
         try:
-            model_architecture = AvailableModels(model_name)
-        except KeyError as exc:
-            raise ValueError(f"Invalid model type {model_name}") from exc
+            model_type = AvailableModels(model_type)
+        except Exception as exc:
+            raise MissingModel(str(model_type)) from exc
         
-        if model_architecture == AvailableModels.BIGAN:
-            return BiganLoader()
+        if model_type == model_type.BIGAN:
+            return BiganLoader
+        elif model_type == model_type.GANOMALY:
+            return GanomalyLoader
+        elif model_type == model_type.FANOGAN:
+            return FanoganLoader
         else:
-            raise ValueError(f"Unknown model {model_name}")
+            raise NotImplementedError

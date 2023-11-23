@@ -29,7 +29,7 @@ def ConvBlock(
         )(x)
 
         if apply_normalization:
-            x = tfa.layers.GroupNormalization(groups=8 )(x)
+            x = keras.layers.GroupNormalization(groups=16)(x)
 
         if isinstance(activation, str):
             x = keras.layers.Activation(activation)(x)

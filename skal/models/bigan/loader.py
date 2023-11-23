@@ -3,7 +3,7 @@ import tensorflow_addons as tfa
 
 from skal.models.base.loader import ModelLoader
 from skal.models.blocks import ConvBlock
-from skal.models.layers import DepthToSpace, ReflectionPadding2D
+from skal.models.layers import DepthToSpace, ReflectionPadding2D, DropConcatenate
 from skal.models.bigan.model import BiGAN
 from skal.models.bigan.trainer import BiganTrainer
 from skal.models.bigan.detector import BiganDetector
@@ -27,32 +27,41 @@ class BiganLoader(ModelLoader):
             )
         else:
             latent_layer = latent_input
-
+            
+        # Adapter block to project the latent code
+        # to the image dimension
         z = keras.layers.Conv2DTranspose(
-            downsampling_factor**2,
+            1,
             base_kernel_size,
             use_bias=False,
             padding="valid",
             kernel_initializer='orthogonal',
-            activation="tanh"
+            activation=None
         )(latent_layer)
-        # conversion layer initialized to zeros
-        # in the first training steps D focuses on images rather
-        # than focusing on latent codes
-        z = keras.layers.SpatialDropout2D(0.2)(z)
+        z = keras.layers.Conv2D(
+            downsampling_factor**2,
+            1,
+            use_bias=False,
+            padding="valid",
+            kernel_initializer='orthogonal',
+            activation=None
+        )(z)
+        z = keras.layers.SpatialDropout2D(0.5)(z)
         z = DepthToSpace(downsampling_factor)(z)
 
-        x = keras.layers.Concatenate()([img_input, z])
+        x = img_input
+        x = keras.layers.Concatenate()([x, z])
 
         dilation_rate = (1, 1)
-        for filters in block_filters:
+        for i, filters in enumerate(block_filters):
+
             x = ConvBlock(
                 filters,
                 padding="same",
                 apply_normalization=False,
-                activation=keras.layers.LeakyReLU(0.2),
                 kernel_initializer=kernel_initizializer,
-                drop_rate=0.0,
+                activation=keras.layers.LeakyReLU(0.2),
+                drop_rate=0.00,
                 dilation_rate=dilation_rate)(x)
             x = ConvBlock(
                 filters,
@@ -62,30 +71,20 @@ class BiganLoader(ModelLoader):
                 activation=keras.layers.LeakyReLU(0.2),
                 drop_rate=0.2,
                 dilation_rate=dilation_rate)(x)
-            
+
             if len(output_shape) == 1:
                 x = keras.layers.AveragePooling2D((2, 2))(x)
             else:
                 dilation_rate = [rate * 2 for rate in dilation_rate]
-
+                
         x = ConvBlock(
-            filters=block_filters[-1],
+            1 ,
             kernel_size=base_kernel_size,
-            padding="valid",
-            apply_normalization=False,
-            activation=keras.layers.LeakyReLU(0.2),
-            drop_rate=0.2,
             dilation_rate=dilation_rate,
-            kernel_initializer=kernel_initizializer)(x)
-
-        x = keras.layers.Conv2D(
-            filters=output_shape[-1],
-            kernel_size=1,
+            padding='valid',
+            apply_normalization=False,
             kernel_initializer=kernel_initizializer,
-            use_bias=False,
-            padding="valid",
-            activation=None,
-            dilation_rate=(1, 1)
+            drop_rate=0.2
         )(x)
 
         if len(output_shape) == 1:
@@ -119,26 +118,28 @@ class BiganLoader(ModelLoader):
             kernel_initializer=kernel_initizializer,
             use_bias=False
         )(x)
-        x = tfa.layers.GroupNormalization(groups=8)(x)
+        x = keras.layers.GroupNormalization(groups=16)(x)
         x = keras.layers.LeakyReLU(0.2)(x)
+        x = keras.layers.SpatialDropout2D(0.2)(x)
+        
         for filters in block_filters:
             x = keras.layers.UpSampling2D((2, 2))(x)
             x = ConvBlock(filters,
                           use_bias=False,
                           padding="same",
                           activation=keras.layers.LeakyReLU(0.2),
-                          drop_rate=0.05,
+                          drop_rate=0.0,
                           kernel_initializer=kernel_initizializer)(x)
             x = ConvBlock(filters,
                           use_bias=False,
                           padding="same",
-                          drop_rate=0.0,
+                          drop_rate=0.2,
                           activation=keras.layers.LeakyReLU(0.2),
                           kernel_initializer=kernel_initizializer)(x)
 
-        x = ReflectionPadding2D((1, 1))(x)
+        x = ReflectionPadding2D((2, 2))(x)
         x = keras.layers.Conv2D(output_shape[-1],
-                                (3, 3),
+                                (5, 5),
                                 kernel_initializer=kernel_initizializer,
                                 use_bias=False,
                                 padding="valid",
@@ -162,14 +163,14 @@ class BiganLoader(ModelLoader):
             x = ConvBlock(filters,
                           use_bias=False,
                           padding="same",
-                          apply_normalization=False if filters == block_filters[0] else True,
+                          apply_normalization=not filters == block_filters[0],
                           activation=keras.layers.LeakyReLU(0.2),
-                          drop_rate=0.0,
+                          drop_rate=0.00,
                           kernel_initializer=kernel_initizializer)(x)
             x = ConvBlock(filters,
                           use_bias=False,
                           padding="same",
-                          drop_rate=0.05,
+                          drop_rate=0.2,
                           activation=keras.layers.LeakyReLU(0.2),
                           kernel_initializer=kernel_initizializer)(x)
             x = keras.layers.AveragePooling2D((2, 2))(x)
@@ -180,7 +181,7 @@ class BiganLoader(ModelLoader):
                       padding="valid",
                       activation=keras.layers.LeakyReLU(0.2),
                       kernel_initializer=kernel_initizializer,
-                      drop_rate=0.0)(x)
+                      drop_rate=0.00)(x)
 
         x = keras.layers.Conv2D(
             output_shape[-1],
